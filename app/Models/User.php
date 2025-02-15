@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -21,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'last_login_at'
     ];
 
     /**
@@ -43,6 +45,40 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_login_at' => 'datetime'
         ];
+    }
+
+    /**
+     * Get the users saved articles.
+     *
+     * @return BelongsToMany<Article>
+     */
+    public function savedArticles(): BelongsToMany
+    {
+        return $this->belongsToMany(Article::class, 'saved_articles')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the users preferred categories.
+     *
+     * @return BelongsToMany<Article>
+     */
+    public function preferredCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'user_preferences')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the users preferred sources.
+     *
+     * @return BelongsToMany<Article>
+     */
+    public function preferredSources(): BelongsToMany
+    {
+        return $this->belongsToMany(Source::class, 'user_preferences')
+            ->withTimestamps();
     }
 }

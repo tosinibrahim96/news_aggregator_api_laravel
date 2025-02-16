@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
+            $table->json('category_mapping')->nullable();
             $table->string('base_url');
             $table->string('api_key')->nullable();
             $table->boolean('is_active')->default(true);

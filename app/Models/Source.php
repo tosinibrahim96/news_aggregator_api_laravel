@@ -20,6 +20,7 @@ class Source extends Model
     protected $fillable = [
         'name',
         'slug',
+        'category_mapping',
         'base_url',
         'api_key',
         'is_active',
@@ -35,7 +36,8 @@ class Source extends Model
     {
         return [
             'is_active' => 'boolean',
-            'last_synced_at' => 'datetime'
+            'last_synced_at' => 'datetime',
+            'category_mapping' => 'array',
         ];
     }
 
@@ -59,5 +61,16 @@ class Source extends Model
     {
         return $this->belongsToMany(User::class, 'user_preferences')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the mapped category for the news source
+     *
+     * @param string $category
+     * @return string
+     */
+    public function getMappedCategory(string $category): string
+    {
+        return $this->category_mapping[$category] ?? $category;
     }
 }

@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Repository for handling article storage and retrieval
@@ -223,4 +225,93 @@ class ArticleRepository implements ArticleRepositoryInterface
 
         return $categories[$categorySlug];
     }
+
+    /**
+     * Search and filter articles
+     *
+     * @param array<string, mixed> $filters
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    public function searchArticles(array $filters, int $perPage = 15): LengthAwarePaginator
+    {
+        $query = $this->model->query()
+            ->with(['source', 'category']);
+
+        $this->applyFilters($query, $filters);
+        $this->applySorting($query, $filters['sort_by'] ?? 'published_at');
+
+        return $query->paginate($perPage);
+    }
+
+
+    /**
+     * Apply filters to the query
+     *
+     * @param Builder $query
+     * @param array<string, mixed> $filters
+     * @return void
+     */
+    private function applyFilters(Builder $query, array $filters): void
+    {
+        if (!empty($filters['keyword'])) {
+            $keyword = $filters['keyword'];
+            $query->where(function (Builder $query) use ($keyword) {
+                $query->where('title', 'like', "%{$keyword}%")
+                    ->orWhere('description', 'like', "%{$keyword}%")
+                    ->orWhere('content', 'like', "%{$keyword}%");
+            });
+        }
+
+        if (!empty($filters['source'])) {
+            $query->whereHas('source', function (Builder $query) use ($filters) {
+                $query->where('slug', $filters['source']);
+            });
+        }
+
+        if (!empty($filters['category'])) {
+            $query->whereHas('category', function (Builder $query) use ($filters) {
+                $query->where('slug', $filters['category']);
+            });
+        }
+
+        if (!empty($filters['author'])) {
+            $query->where('author', 'like', "%{$filters['author']}%");
+        }
+
+        if (!empty($filters['date_from'])) {
+            $query->where('published_at', '>=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->where('published_at', '<=', $filters['date_to']);
+        }
+    }
+
+
+    /**
+     * Apply sorting to the query
+     *
+     * @param Builder $query
+     * @param string $sortBy
+     * @return void
+     */
+    private function applySorting(Builder $query, string $sortBy): void
+    {
+        $direction = 'asc';
+        
+        if (str_starts_with($sortBy, '-')) {
+            $sortBy = substr($sortBy, 1);
+            $direction = 'desc';
+        }
+
+        $allowedSortFields = ['published_at', 'title'];
+        
+        if (in_array($sortBy, $allowedSortFields)) {
+            $query->orderBy($sortBy, $direction);
+        } else {
+            $query->orderBy('published_at', 'desc');
+        }
+    }
+
 }

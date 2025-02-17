@@ -6,6 +6,7 @@ namespace App\Contracts\Repositories;
 
 use App\DTO\ArticleDTO;
 use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Interface for article repository implementations
@@ -42,4 +43,13 @@ interface ArticleRepositoryInterface
      * @return int
      */
     public function getCountBySource(string $sourceIdentifier): int;
+
+    /**
+     * Search and filter articles
+     *
+     * @param array<string, mixed> $filters
+     * @param int $perPage
+     * @return LengthAwarePaginator
+     */
+    public function searchArticles(array $filters, int $perPage = 15): LengthAwarePaginator;
 }

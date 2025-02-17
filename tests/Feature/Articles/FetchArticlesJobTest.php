@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Articles;
 
 use Tests\TestCase;
 use App\Jobs\News\FetchArticlesJob;

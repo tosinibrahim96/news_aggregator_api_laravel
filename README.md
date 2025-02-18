@@ -1,66 +1,245 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# News Aggregator API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel-based API that aggregates news from multiple sources (The Guardian, NewsAPI, and New York Times) with user preference-based personalization.
 
-## About Laravel
+## Features
+- Multi-source news aggregation
+- User authentication with JWT
+- Personalized news feed based on user preferences
+- Article search and filtering
+- Rate limiting and caching
+- Automated article fetching
+- API documentation with Swagger/OpenAPI
+- Docker-ready setup
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Requirements
+- Docker & Docker Compose
+- Git
+- API keys for news sources (The Guardian, NewsAPI, NYT)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Installation
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Clone the repository
+```bash
+git clone 
+cd news-aggregator
+```
 
-## Learning Laravel
+### 2. Environment Setup
+```bash
+# Copy environment file
+cp .env.example .env
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Edit `.env` file and update the following:
+```env
+# App Settings
+APP_NAME="News Aggregator"
+APP_URL=http://localhost:8000
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+# Database Settings
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=news_aggregator
+DB_USERNAME=news_user
+DB_PASSWORD=news_password
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# JWT Configuration
+JWT_SECRET=     # Will be generated in next steps
+JWT_TTL=60      # Token lifetime in minutes
+JWT_REFRESH_TTL=20160  # Refresh token lifetime in minutes
 
-## Laravel Sponsors
+# News API Keys
+GUARDIAN_API_KEY=your-guardian-api-key
+NEWS_API_KEY=your-newsapi-key
+NYT_API_KEY=your-nyt-api-key
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Swagger Documentation
+L5_SWAGGER_GENERATE_ALWAYS=true
+SWAGGER_VERSION=3.0
+```
 
-### Premium Partners
+### 3. Get API Keys
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+#### The Guardian API
+1. Visit https://open-platform.theguardian.com/access/
+2. Click "Get API Key"
+3. Fill out the registration form
+4. Copy the API key to `GUARDIAN_API_KEY` in your `.env`
 
-## Contributing
+#### NewsAPI
+1. Visit https://newsapi.org/register
+2. Create an account
+3. Copy the API key to `NEWS_API_KEY` in your `.env`
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+#### New York Times API
+1. Visit https://developer.nytimes.com/
+2. Create an account and create a new app
+3. Enable "Article Search API"
+4. Copy the API key to `NYT_API_KEY` in your `.env`
 
-## Code of Conduct
+### 4. Start Docker Environment
+```bash
+# Build and start containers
+docker-compose up -d --build
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Install PHP dependencies
+docker-compose exec app composer install
 
-## Security Vulnerabilities
+# Generate application key
+docker-compose exec app php artisan key:generate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Generate JWT secret
+docker-compose exec app php artisan jwt:secret
+
+# Run database migrations and seeders
+docker-compose exec app php artisan migrate --seed
+```
+
+### 5. Generate API Documentation
+```bash
+docker-compose exec app php artisan l5-swagger:generate
+```
+
+## Data Synchronization
+
+### Initial Data Setup
+After installation, you'll need to fetch initial articles:
+```bash
+# Fetch articles from all sources (this adds jobs to the queue)
+docker-compose exec app php artisan news:fetch
+
+# Process the queue to actually fetch the articles
+docker-compose exec app php artisan queue:work --queue=news-the-guardian,news-newsapi,news-new-york-times 
+```
+
+### Fetch Command Options
+```bash
+# Fetch from specific source
+docker-compose exec app php artisan news:fetch --source=the-guardian
+
+# Fetch specific category
+docker-compose exec app php artisan news:fetch --category=technology
+
+# Control retry attempts and timeout
+docker-compose exec app php artisan news:fetch --max-retry=3 --timeout=300
+
+Remember that these commands add jobs to the queue. You need to process the jobs on the queue to actually fetch the articles
+```
+
+### Monitoring Data Sync
+1. View Logs:
+```bash
+# View sync logs
+docker-compose exec app tail -f storage/logs/laravel.log
+
+# Filter for specific source
+docker-compose exec app tail -f storage/logs/laravel.log | grep "The Guardian"
+```
+
+2. Check Sync Status:
+```bash
+# Get article counts
+docker-compose exec app php artisan tinker
+>>> App\Models\Article::count();
+>>> App\Models\Article::whereDate('created_at', today())->count();
+```
+
+## API Usage
+
+### API Documentation
+Access the Swagger documentation at:
+```
+http://localhost:8000/api/documentation
+```
+
+### Available Endpoints
+
+#### Authentication
+- POST `/api/auth/register` - Register new user
+- POST `/api/auth/login` - Login user
+- POST `/api/auth/logout` - Logout user
+- POST `/api/auth/refresh` - Refresh JWT token
+
+#### Articles
+- GET `/api/articles/search` - Search and filter articles
+  - Supports filtering by source, category, author
+  - Supports date range filtering
+  - Returns personalized results for authenticated users
+
+#### User Preferences
+- GET `/api/preferences` - Get user preferences
+- PUT `/api/preferences` - Update user preferences
+
+## Testing
+```bash
+# Run all tests
+docker-compose exec app php artisan test
+
+# Run specific test suite
+docker-compose exec app php artisan test --testsuite=Feature
+docker-compose exec app php artisan test --testsuite=Unit
+```
+
+## Troubleshooting
+
+### Common Issues
+1. **Container Connection Issues**
+```bash
+# Restart containers
+docker-compose down
+docker-compose up -d
+
+# Check container logs
+docker-compose logs -f
+```
+
+2. **Permission Issues**
+```bash
+# Fix storage permissions
+docker-compose exec app chmod -R 775 storage bootstrap/cache
+```
+
+3. **JWT Issues**
+```bash
+# Clear config cache
+docker-compose exec app php artisan config:clear
+
+# Regenerate JWT secret
+docker-compose exec app php artisan jwt:secret
+```
+
+## Directory Structure
+Important directories and files:
+```
+.
+├── app
+│   ├── Actions/           # Business logic
+│   ├── Contracts/         # Interfaces
+│   ├── Http/
+│   │   ├── Controllers/   # API Controllers
+│   │   ├── Requests/      # Form requests
+│   │   └── Resources/     # API Resources
+│   ├── Models/            # Eloquent models
+│   └── Repositories/      # Data access layer
+├── database
+│   ├── factories/         # Model factories
+│   ├── migrations/        # Database migrations
+│   └── seeders/          # Database seeders
+├── docker/               # Docker configuration
+├── tests/                # Test suites
+└── docker-compose.yml    # Docker services
+```
+
+## Maintenance
+```bash
+# Clear all caches
+docker-compose exec app php artisan optimize:clear
+
+# Update dependencies
+docker-compose exec app composer update
+```
 
 ## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+[Add your license information here]

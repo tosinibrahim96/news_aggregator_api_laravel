@@ -17,38 +17,58 @@ use Illuminate\Http\JsonResponse;
 
 
 /**
- * @group Authentication
- * 
- * APIs for managing authentication
+ * @OA\Tag(
+ *     name="Authentication",
+ *     description="API Endpoints for managing authentication"
+ * )
  */
 class AuthController extends Controller
 {
-     /**
-     * Register a new user
-     * 
-     * @param RegisterRequest $request
-     * @param RegisterAction $action
-     * @return JsonResponse
-     * 
-     * @bodyParam name string required The name of the user. Example: John Doe
-     * @bodyParam email string required The email of the user. Example: john@example.com
-     * @bodyParam password string required The password of the user. Example: password123
-     * @bodyParam password_confirmation string required The password confirmation. Example: password123
-     * 
-     * @response 201 {
-     *   "status": "success",
-     *   "message": "Registration successful",
-     *   "data": {
-     *     "user": {
-     *       "id": 1,
-     *       "name": "John Doe",
-     *       "email": "john@example.com",
-     *       "created_at": "2024-02-16T12:00:00.000000Z"
-     *     },
-     *     "token": "abcdef123456",
-     *     "type": "bearer"
-     *   }
-     * }
+    /**
+     * @OA\Post(
+     *     path="/api/auth/register",
+     *     summary="Register a new user",
+     *     description="Create a new user account",
+     *     operationId="register",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password","password_confirmation"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123"),
+     *             @OA\Property(property="password_confirmation", type="string", format="password", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="User registered successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Registration successful"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="user",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="John Doe"),
+     *                     @OA\Property(property="email", type="string", example="john@example.com"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time")
+     *                 ),
+     *                 @OA\Property(property="token", type="string", example="abcdef123456"),
+     *                 @OA\Property(property="type", type="string", example="bearer")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation Error"
+     *     )
+     * )
      */
     public function register(RegisterRequest $request, RegisterAction $action): JsonResponse
     {
@@ -62,34 +82,53 @@ class AuthController extends Controller
     }
 
     /**
-     * Login user
-     * 
-     * @param LoginRequest $request
-     * @param LoginAction $action
-     * @return JsonResponse
-     * 
-     * @bodyParam email string required The email of the user. Example: john@example.com
-     * @bodyParam password string required The password of the user. Example: password123
-     * 
-     * @response 200 {
-     *   "status": "success",
-     *   "message": "Login successful",
-     *   "data": {
-     *     "user": {
-     *       "id": 1,
-     *       "name": "John Doe",
-     *       "email": "john@example.com",
-     *       "created_at": "2024-02-16T12:00:00.000000Z"
-     *     },
-     *     "token": "abcdef123456",
-     *     "type": "bearer"
-     *   }
-     * }
-     * 
-     * @response 401 {
-     *   "status": "error",
-     *   "message": "Invalid credentials"
-     * }
+     * @OA\Post(
+     *     path="/api/auth/login",
+     *     summary="Login user",
+     *     description="Login with email and password",
+     *     operationId="login",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Login successful"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="user",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="John Doe"),
+     *                     @OA\Property(property="email", type="string", example="john@example.com"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time")
+     *                 ),
+     *                 @OA\Property(property="token", type="string", example="abcdef123456"),
+     *                 @OA\Property(property="type", type="string", example="bearer")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid credentials",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Invalid credentials")
+     *         )
+     *     )
+     * )
      */
     public function login(LoginRequest $request, LoginAction $action): JsonResponse
     {
@@ -107,28 +146,34 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user
-     * 
-     * @param LogoutAction $action
-     * @return JsonResponse
-     * 
-     * @authenticated
-     * 
-     * @response 200 {
-     *   "status": "success",
-     *   "message": "Logout successful",
-     *   "data": null
-     * }
-     * 
-     * @response 401 {
-     *   "status": "error",
-     *   "message": "Unauthenticated",
-     *   "errors": null
-     * }
-     * 
-     * @throws \Illuminate\Auth\AuthenticationException
-     * 
-     * @header Authorization Bearer {token}
+     * @OA\Post(
+     *     path="/api/auth/logout",
+     *     summary="Logout user",
+     *     description="Invalidate the token",
+     *     operationId="logout",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Logout successful"),
+     *             @OA\Property(property="data", type="null")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Unauthenticated"),
+     *             @OA\Property(property="errors", type="null")
+     *         )
+     *     )
+     * )
      */
     public function logout(LogoutAction $action): JsonResponse
     {
@@ -138,40 +183,39 @@ class AuthController extends Controller
 
 
     /**
-     * Refresh token
-     * 
-     * Refresh the JWT token for the authenticated user
-     *
-     * @param RefreshTokenAction $action
-     * @return JsonResponse
-     * 
-     * @authenticated
-     * 
-     * @response 200 {
-     *   "status": "success",
-     *   "message": "Token refreshed successfully",
-     *   "data": {
-     *     "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-     *     "type": "bearer"
-     *   }
-     * }
-     * 
-     * @response 401 {
-     *   "status": "error",
-     *   "message": "Token has expired",
-     *   "errors": null
-     * }
-     * 
-     * @response 401 {
-     *   "status": "error",
-     *   "message": "Token is invalid",
-     *   "errors": null
-     * }
-     * 
-     * @throws \PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException
-     * @throws \PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException
-     * 
-     * @header Authorization Bearer {token}
+     * @OA\Post(
+     *     path="/api/auth/refresh",
+     *     summary="Refresh token",
+     *     description="Refresh the JWT token",
+     *     operationId="refresh",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Token refreshed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Token refreshed successfully"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="token", type="string", example="eyJ0eXAiOiJKV1QiLCJhbGc..."),
+     *                 @OA\Property(property="type", type="string", example="bearer")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Token error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Token has expired"),
+     *             @OA\Property(property="errors", type="null")
+     *         )
+     *     )
+     * )
      */
     public function refresh(RefreshTokenAction $action): JsonResponse
     {

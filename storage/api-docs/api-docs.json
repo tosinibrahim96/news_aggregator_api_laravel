@@ -1,0 +1,807 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "News Aggregator API",
+        "description": "The news aggregator API that pulls articles from various sources and presents them in a clean, easy-to-read format",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/articles/search": {
+            "get": {
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Search and filter articles",
+                "description": "Get a paginated list of articles with optional filtering and search. If user is authenticated and has preferences, results will be sorted accordingly.",
+                "operationId": "searchArticles",
+                "parameters": [
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "description": "Search term for article title and content",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "climate"
+                        }
+                    },
+                    {
+                        "name": "source",
+                        "in": "query",
+                        "description": "Filter by source slug",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "the-guardian"
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "Filter by category slug",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "technology"
+                        }
+                    },
+                    {
+                        "name": "author",
+                        "in": "query",
+                        "description": "Filter by author name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John Doe"
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "Filter articles published after this date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2024-01-01"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "Filter articles published before this date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2024-02-01"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort field and direction (-published_at, published_at, -title, title)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "-published_at",
+                                "published_at",
+                                "-title",
+                                "title"
+                            ],
+                            "example": "-published_at"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of articles per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "example": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "Article Title"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "example": "Article description"
+                                                            },
+                                                            "content": {
+                                                                "type": "string",
+                                                                "example": "Article content"
+                                                            },
+                                                            "url": {
+                                                                "type": "string",
+                                                                "example": "https://example.com/article"
+                                                            },
+                                                            "image_url": {
+                                                                "type": "string",
+                                                                "example": "https://example.com/image.jpg"
+                                                            },
+                                                            "author": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "published_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2024-02-17T12:00:00.000000Z"
+                                                            },
+                                                            "source": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "The Guardian"
+                                                                    },
+                                                                    "slug": {
+                                                                        "type": "string",
+                                                                        "example": "the-guardian"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "category": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "Technology"
+                                                                    },
+                                                                    "slug": {
+                                                                        "type": "string",
+                                                                        "example": "technology"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "meta": {
+                                                    "properties": {
+                                                        "current_page": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "from": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "last_page": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "per_page": {
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        },
+                                                        "to": {
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        },
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "example": 150
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register a new user",
+                "description": "Create a new user account",
+                "operationId": "register",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Registration successful"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "john@example.com"
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "abcdef123456"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "bearer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Login user",
+                "description": "Login with email and password",
+                "operationId": "login",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "john@example.com"
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "abcdef123456"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "bearer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid credentials"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout user",
+                "description": "Invalidate the token",
+                "operationId": "logout",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logout successful"
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated"
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Refresh token",
+                "description": "Refresh the JWT token",
+                "operationId": "refresh",
+                "responses": {
+                    "200": {
+                        "description": "Token refreshed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token refreshed successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "bearer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token has expired"
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/preferences": {
+            "get": {
+                "tags": [
+                    "User Preferences"
+                ],
+                "summary": "Get user preferences",
+                "description": "Retrieve the current user's preferences for sources, categories, and authors",
+                "operationId": "getPreferences",
+                "responses": {
+                    "200": {
+                        "description": "Preferences retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "sources": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "the-guardian"
+                                                    }
+                                                },
+                                                "categories": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "technology"
+                                                    }
+                                                },
+                                                "authors": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "User Preferences"
+                ],
+                "summary": "Update user preferences",
+                "description": "Update the current user's preferences for sources, categories, and authors",
+                "operationId": "updatePreferences",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "sources": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "the-guardian"
+                                        }
+                                    },
+                                    "categories": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "technology"
+                                        }
+                                    },
+                                    "authors": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "John Doe"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Preferences updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Preferences updated successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "sources": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "the-guardian"
+                                                    }
+                                                },
+                                                "categories": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "technology"
+                                                    }
+                                                },
+                                                "authors": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Articles",
+            "description": "API Endpoints for articles"
+        },
+        {
+            "name": "Authentication",
+            "description": "API Endpoints for managing authentication"
+        },
+        {
+            "name": "User Preferences",
+            "description": "API Endpoints for managing user preferences for personalized news feed"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "apiAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}

@@ -240,6 +240,3 @@ docker-compose exec app php artisan optimize:clear
 # Update dependencies
 docker-compose exec app composer update
 ```
-
-## License
-[Add your license information here]

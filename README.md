@@ -21,8 +21,8 @@ A Laravel-based API that aggregates news from multiple sources (The Guardian, Ne
 
 ### 1. Clone the repository
 ```bash
-git clone 
-cd news-aggregator
+git clone https://github.com/tosinibrahim96/news_aggregator_api_laravel.git
+cd news_aggregator_api_laravel
 ```
 
 ### 2. Environment Setup

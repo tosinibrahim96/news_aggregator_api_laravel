@@ -47,8 +47,6 @@ DB_PASSWORD=news_password
 
 # JWT Configuration
 JWT_SECRET=     # Will be generated in next steps
-JWT_TTL=60      # Token lifetime in minutes
-JWT_REFRESH_TTL=20160  # Refresh token lifetime in minutes
 
 # News API Keys
 GUARDIAN_API_KEY=your-guardian-api-key

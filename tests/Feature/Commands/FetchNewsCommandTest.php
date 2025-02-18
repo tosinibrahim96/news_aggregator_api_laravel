@@ -18,10 +18,8 @@ class FetchNewsCommandTest extends TestCase
      */
     public function test_command_fails_if_no_sources_configured(): void
     {
-        // Simulate an empty collection returned by app('news.sources')
         app()->bind('news.sources', fn () => collect());
 
-        // Make sure we have at least one category
         Category::factory()->create();
 
         $this->expectExceptionMessage('No news sources configured or available.');
@@ -34,12 +32,8 @@ class FetchNewsCommandTest extends TestCase
      */
     public function test_command_fails_if_no_categories_configured(): void
     {
-        // Provide a non-empty collection of mock sources
         $mockSource = $this->createMockSource('mock-source-1');
         app()->bind('news.sources', fn () => collect([$mockSource]));
-
-        // No categories in the DB
-        // (Alternatively, ensure Category::all() is empty)
 
         $this->expectExceptionMessage('No news categories configured.');
 
@@ -53,24 +47,18 @@ class FetchNewsCommandTest extends TestCase
     {
         Bus::fake();
 
-        // Create multiple mock sources
         $mockSource1 = $this->createMockSource('mock-source-1');
         $mockSource2 = $this->createMockSource('mock-source-2');
         app()->bind('news.sources', fn () => collect([$mockSource1, $mockSource2]));
 
-        // Create 2 categories
         $categories = Category::factory()->count(2)->create();
 
-        // Run the command
         Artisan::call('news:fetch');
 
-        // Retrieve all batches that were dispatched
         $batches = Bus::dispatchedBatches();
 
-        // We expect 2 batches total (one per source)
         $this->assertCount(2, $batches, 'Expected exactly 2 batches to be dispatched');
 
-        // Each batch should have the same number of jobs as we have categories
         foreach ($batches as $batchIndex => $batch) {
             $this->assertCount(
                 $categories->count(),
@@ -91,17 +79,14 @@ class FetchNewsCommandTest extends TestCase
         $mockSource2 = $this->createMockSource('nyt');
         $mockSource3 = $this->createMockSource('newsapi');
 
-        // Bind all three, but we will only request two
         app()->bind('news.sources', fn () => collect([$mockSource1, $mockSource2, $mockSource3]));
 
         Category::factory()->count(1)->create();
 
-        // Run command with --source=guardian, --source=nyt
         Artisan::call('news:fetch', [
             '--source' => ['guardian', 'nyt']
         ]);
 
-        // Now check how many batches were recorded
         $batches = Bus::dispatchedBatches();
         $this->assertCount(
             2,
@@ -117,11 +102,9 @@ class FetchNewsCommandTest extends TestCase
     {
         Bus::fake();
 
-        // Provide at least one source
         $mockSource = $this->createMockSource('guardian');
         app()->bind('news.sources', fn () => collect([$mockSource]));
 
-        // Create 3 categories, but only request 2 of them
         $cat1 = Category::factory()->create(['slug' => 'politics']);
         $cat2 = Category::factory()->create(['slug' => 'technology']);
         $cat3 = Category::factory()->create(['slug' => 'sports']);
@@ -133,7 +116,6 @@ class FetchNewsCommandTest extends TestCase
         $batches = Bus::dispatchedBatches();
         $this->assertCount(1, $batches, 'We expected exactly 1 batch for 1 source');
 
-        // That single batch should have exactly 2 jobs (politics + technology)
         $this->assertCount(2, $batches[0]->jobs);
     }
 
@@ -142,8 +124,6 @@ class FetchNewsCommandTest extends TestCase
      */
     private function createMockSource(string $identifier)
     {
-        // If you prefer a real class, use an actual source implementation
-        // or a simple anonymous class with the required method.
         $mock = Mockery::mock();
         $mock->shouldReceive('getSourceIdentifier')->andReturn($identifier);
         return $mock;

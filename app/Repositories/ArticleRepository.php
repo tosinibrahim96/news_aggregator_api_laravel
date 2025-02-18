@@ -9,6 +9,7 @@ use App\DTO\ArticleDTO;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Source;
+use App\Models\User;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -108,7 +109,7 @@ class ArticleRepository implements ArticleRepositoryInterface
      */
     private function getArticleAttributes(ArticleDTO $articleDto): array
     {
-       return [
+        return [
             'title' => $articleDto->title,
             'slug' => Str::slug($articleDto->title),
             'description' => $articleDto->description,
@@ -227,19 +228,22 @@ class ArticleRepository implements ArticleRepositoryInterface
     }
 
     /**
-     * Search and filter articles
-     *
-     * @param array<string, mixed> $filters
-     * @param int $perPage
-     * @return LengthAwarePaginator
+     * {@inheritDoc}
      */
-    public function searchArticles(array $filters, int $perPage = 15): LengthAwarePaginator
+    public function searchArticles(array $filters, ?User $user = null, int $perPage = 15): LengthAwarePaginator
     {
         $query = $this->model->query()
             ->with(['source', 'category']);
 
         $this->applyFilters($query, $filters);
-        $this->applySorting($query, $filters['sort_by'] ?? 'published_at');
+
+
+        // Apply preference-based sorting if user is provided
+        if ($user) {
+            $this->applyPreferenceSorting($query, $user);
+        } else {
+            $this->applySorting($query, $filters['sort_by'] ?? 'published_at');
+        }
 
         return $query->paginate($perPage);
     }
@@ -299,14 +303,14 @@ class ArticleRepository implements ArticleRepositoryInterface
     private function applySorting(Builder $query, string $sortBy): void
     {
         $direction = 'asc';
-        
+
         if (str_starts_with($sortBy, '-')) {
             $sortBy = substr($sortBy, 1);
             $direction = 'desc';
         }
 
         $allowedSortFields = ['published_at', 'title'];
-        
+
         if (in_array($sortBy, $allowedSortFields)) {
             $query->orderBy($sortBy, $direction);
         } else {
@@ -314,4 +318,88 @@ class ArticleRepository implements ArticleRepositoryInterface
         }
     }
 
+
+
+    /**
+     * Apply preference-based sorting to the query
+     *
+     * @param Builder $query
+     * @param User $user
+     * @return void
+     */
+    private function applyPreferenceSorting(Builder $query, User $user): void
+    {
+        $preferences = $user->preferences()
+            ->select('source_id', 'category_id', 'author_name')
+            ->get();
+
+        $sources = $preferences->pluck('source_id')->filter()->toArray();
+        $categories = $preferences->pluck('category_id')->filter()->toArray();
+        $authors = $preferences->pluck('author_name')->filter()->toArray();
+
+        $sourcesPlaceholder   = $this->buildPlaceholders($sources);
+        $categoriesPlaceholder= $this->buildPlaceholders($categories);
+        $authorsPlaceholder   = $this->buildPlaceholders($authors);
+        
+        $sql = "
+        CASE
+            WHEN source_id IN ($sourcesPlaceholder)
+                 AND category_id IN ($categoriesPlaceholder)
+                 AND author IN ($authorsPlaceholder)
+            THEN 1
+
+            WHEN (
+                    source_id IN ($sourcesPlaceholder)
+                    AND category_id IN ($categoriesPlaceholder)
+                 )
+                 OR (
+                    source_id IN ($sourcesPlaceholder)
+                    AND author IN ($authorsPlaceholder)
+                 )
+                 OR (
+                    category_id IN ($categoriesPlaceholder)
+                    AND author IN ($authorsPlaceholder)
+                 )
+            THEN 2
+
+            WHEN source_id IN ($sourcesPlaceholder)
+                 OR category_id IN ($categoriesPlaceholder)
+                 OR author IN ($authorsPlaceholder)
+            THEN 3
+
+            ELSE 4
+        END
+        ";
+
+        
+
+        $params = [
+            ...$sources, ...$categories, ...$authors,
+            ...$sources, ...$categories,
+            ...$sources, ...$authors,
+            ...$categories, ...$authors,
+            ...$sources, ...$categories, ...$authors,
+        ];
+
+        $query->orderByRaw("$sql, published_at DESC", $params);
+    }
+
+
+
+    /**
+     * Build a comma-separated list of "?" placeholders matching the count of $items.
+     * If the array is empty, return "NULL" so "IN (NULL)" won't match anything.
+     *
+     * @param array $items
+     * @return string
+     */
+    private function buildPlaceholders(array $items): string
+    {
+        if (empty($items)) {
+            return 'NULL';
+        }
+
+        // e.g. if $items has 3 elements, return "?,?,?"
+        return implode(',', array_fill(0, count($items), '?'));
+    }
 }

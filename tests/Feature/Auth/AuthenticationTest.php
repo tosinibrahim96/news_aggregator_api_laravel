@@ -113,7 +113,6 @@ class AuthenticationTest extends TestCase
                 'message' => 'Logout successful'
             ]);
 
-        // Try to use the token after logout
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->postJson('/api/auth/logout');
 
@@ -152,7 +151,6 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
         $token = JWTAuth::fromUser($user);
 
-        // Simulate time jump
         Carbon::setTestNow(now()->addMinutes(config('jwt.ttl') + 1));
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)

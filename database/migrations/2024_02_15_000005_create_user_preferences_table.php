@@ -17,8 +17,10 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['user_id', 'category_id', 'source_id', 'author_name'], 'user_preferences_unique');
-            $table->index(['user_id', 'category_id']);
+
             $table->index(['user_id', 'source_id']);
+            $table->index(['user_id', 'category_id']);
+            $table->index(['user_id', 'author_name']);
         });
     }
 

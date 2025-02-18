@@ -7,6 +7,8 @@ namespace Tests\Feature\Articles;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Source;
+use App\Models\User;
+use App\Models\UserPreference;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,6 +16,7 @@ class ArticleSearchTest extends TestCase
 {
     use RefreshDatabase;
 
+    private User $user;
     private Source $source;
     private Category $category;
 
@@ -21,6 +24,7 @@ class ArticleSearchTest extends TestCase
     {
         parent::setUp();
         
+        $this->user = User::factory()->create();
         $this->source = Source::factory()->create(['name' => 'Test Source']);
         $this->category = Category::factory()->create(['name' => 'Technology']);
     }
@@ -80,14 +84,12 @@ class ArticleSearchTest extends TestCase
      */
     public function test_can_search_articles_by_keyword(): void
     {
-        // Create articles with specific title
         Article::factory()->count(3)->create([
             'source_id' => $this->source->id,
             'category_id' => $this->category->id,
             'title' => 'AI Development News',
         ]);
 
-        // Create other articles
         Article::factory()->count(5)->create([
             'source_id' => $this->source->id,
             'category_id' => $this->category->id,
@@ -107,13 +109,11 @@ class ArticleSearchTest extends TestCase
     {
         $anotherSource = Source::factory()->create();
 
-        // Create articles for our test source
         Article::factory()->count(3)->create([
             'source_id' => $this->source->id,
             'category_id' => $this->category->id,
         ]);
 
-        // Create articles for another source
         Article::factory()->count(5)->create([
             'source_id' => $anotherSource->id,
             'category_id' => $this->category->id,
@@ -133,13 +133,11 @@ class ArticleSearchTest extends TestCase
     {
         $anotherCategory = Category::factory()->create();
 
-        // Create articles for our test category
         Article::factory()->count(3)->create([
             'source_id' => $this->source->id,
             'category_id' => $this->category->id,
         ]);
 
-        // Create articles for another category
         Article::factory()->count(5)->create([
             'source_id' => $this->source->id,
             'category_id' => $anotherCategory->id,
@@ -157,14 +155,12 @@ class ArticleSearchTest extends TestCase
      */
     public function test_can_filter_articles_by_author(): void
     {
-        // Create articles with specific author
         Article::factory()->count(3)->create([
             'source_id' => $this->source->id,
             'category_id' => $this->category->id,
             'author' => 'John Doe',
         ]);
 
-        // Create other articles
         Article::factory()->count(5)->create([
             'source_id' => $this->source->id,
             'category_id' => $this->category->id,
@@ -182,7 +178,6 @@ class ArticleSearchTest extends TestCase
      */
     public function test_can_filter_articles_by_date_range(): void
     {
-        // Create articles with specific dates
         Article::factory()->count(3)->create([
             'source_id' => $this->source->id,
             'category_id' => $this->category->id,
@@ -261,5 +256,123 @@ class ArticleSearchTest extends TestCase
 
         $response = $this->getJson('/api/articles/search?sort_by=invalid-field');
         $response->assertStatus(422);
+    }
+
+    /**
+     * Test articles are ordered by preference matches when user is authenticated
+     */
+    public function test_articles_ordered_by_preference_matches_for_authenticated_user(): void
+    {
+        // Set up preferences
+        UserPreference::factory()->create([
+            'user_id' => $this->user->id,
+            'source_id' => $this->source->id,
+        ]);
+
+        $anotherSource = Source::factory()->create();
+
+        // Create articles with different match levels
+        $preferredArticle = Article::factory()->create([
+            'source_id' => $this->source->id,
+            'category_id' => $this->category->id,
+            'published_at' => now()->subDay(), // Older
+        ]);
+
+        $nonPreferredArticle = Article::factory()->create([
+            'source_id' => $anotherSource->id,
+            'category_id' => $this->category->id,
+            'published_at' => now(), // Newer
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/articles/search');
+
+        $response->assertOk();
+        
+        // Preferred source article should come first despite being older
+        $articles = $response->json('data.data');
+        $this->assertEquals($preferredArticle->id, $articles[0]['id']);
+        $this->assertEquals($nonPreferredArticle->id, $articles[1]['id']);
+    }
+
+    /**
+     * Test preference-based ordering works with filters
+     */
+    public function test_preference_based_ordering_works_with_filters(): void
+    {
+        // Set up preferences
+        UserPreference::factory()->create([
+            'user_id' => $this->user->id,
+            'category_id' => $this->category->id,
+        ]);
+
+        $anotherCategory = Category::factory()->create();
+
+        // Create articles with specific dates
+        Article::factory()->create([
+            'source_id' => $this->source->id,
+            'category_id' => $this->category->id, // Preferred category
+            'published_at' => '2024-01-15',
+        ]);
+
+        Article::factory()->create([
+            'source_id' => $this->source->id,
+            'category_id' => $anotherCategory->id,
+            'published_at' => '2024-01-16',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/articles/search?date_from=2024-01-01&date_to=2024-01-31');
+
+        $response->assertOk();
+        
+        $articles = $response->json('data.data');
+        $this->assertEquals($this->category->id, $articles[0]['category']['id']);
+    }
+
+    /**
+     * Test multiple preference matches are prioritized properly
+     */
+    public function test_multiple_preference_matches_are_prioritized(): void
+    {
+        // Set up multiple preferences
+        UserPreference::factory()->create([
+            'user_id' => $this->user->id,
+            'source_id' => $this->source->id,
+        ]);
+        UserPreference::factory()->create([
+            'user_id' => $this->user->id,
+            'author_name' => 'John Doe',
+        ]);
+
+        // Create articles with varying levels of preference matches
+        $multiMatchArticle = Article::factory()->create([
+            'source_id' => $this->source->id,
+            'category_id' => $this->category->id,
+            'author' => 'John Doe',
+            'published_at' => now()->subDays(2), // Oldest
+        ]);
+
+        $singleMatchArticle = Article::factory()->create([
+            'source_id' => $this->source->id,
+            'category_id' => $this->category->id,
+            'published_at' => now()->subDay(), // Middle
+        ]);
+
+        $noMatchArticle = Article::factory()->create([
+            'source_id' => Source::factory()->create()->id,
+            'category_id' => $this->category->id,
+            'published_at' => now(), // Newest
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/articles/search');
+
+        $response->assertOk();
+        
+        $articles = $response->json('data.data');
+        $this->assertEquals($multiMatchArticle->id, $articles[0]['id']);
+        $this->assertEquals($singleMatchArticle->id, $articles[1]['id']);
+        $this->assertEquals($noMatchArticle->id, $articles[2]['id']);
     }
 }
